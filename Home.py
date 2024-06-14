@@ -27,6 +27,10 @@ def calculate_breakeven(current_subs, daily_subs, sub_growth_rate, current_hours
         subs_list.append(current_subs)
         hours_list.append(current_hours)
         
+        # Prevent excessive iterations for safety
+        if days > 365*5:  # Limit to a maximum of 5 years
+            break
+        
     breakeven_date = datetime.now() + timedelta(days=days)
     return days, breakeven_date, subs_list, hours_list
 
@@ -50,6 +54,10 @@ try:
     # Convert historical data from text input to list of floats
     historical_subs = list(map(int, historical_subs_input.split(',')))
     historical_hours = list(map(float, historical_hours_input.split(',')))
+    
+    # Validate the length of historical data to prevent excessive resource usage
+    if len(historical_subs) > 100 or len(historical_hours) > 100:
+        raise ValueError("Historical data length should not exceed 100 entries.")
     
     # Calculate growth rates based on historical data
     sub_growth_rate = calculate_growth_rate(historical_subs)
@@ -86,6 +94,6 @@ try:
     st.pyplot(fig)
 
 except ValueError as e:
-    st.error(f"Error in processing historical data: {e}. Please ensure the data is correctly formatted and try again.")
+    st.error(f"Error in processing historical data: {e}. Please ensure the data is correctly formatted and does not exceed 100 entries.")
 except Exception as e:
     st.error(f"An unexpected error occurred: {e}.")
