@@ -3,13 +3,6 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from datetime import datetime, timedelta
 
-# Function to calculate daily growth rate
-def calculate_growth_rate(historical_data):
-    if len(historical_data) < 2:
-        return 0
-    daily_growth_rate = (historical_data[-1] - historical_data[0]) / len(historical_data) / historical_data[0] * 100
-    return daily_growth_rate
-
 # Function to calculate breakeven point
 def calculate_breakeven(current_subs, daily_subs, sub_growth_rate, current_hours, daily_hours, hour_growth_rate):
     days = 0
@@ -44,56 +37,36 @@ current_hours = st.sidebar.number_input("Current Watch Hours", min_value=0.0, va
 
 st.sidebar.header("Daily Growth")
 daily_subs = st.sidebar.number_input("Daily New Subscribers", min_value=0.0, value=10.0)
+sub_growth_rate = st.sidebar.number_input("Subscriber Growth Rate (%)", min_value=0.0, value=2.0)
 daily_hours = st.sidebar.number_input("Daily New Watch Hours", min_value=0.0, value=2.0)
+hour_growth_rate = st.sidebar.number_input("Watch Hour Growth Rate (%)", min_value=0.0, value=2.0)
 
-st.sidebar.header("Historical Data")
-historical_subs_input = st.sidebar.text_area("Historical Subscribers (comma-separated)", "100,110,120,130,140")
-historical_hours_input = st.sidebar.text_area("Historical Watch Hours (comma-separated)", "50,52,54,56,58")
+# Calculate breakeven point
+days, breakeven_date, subs_list, hours_list = calculate_breakeven(current_subs, daily_subs, sub_growth_rate, current_hours, daily_hours, hour_growth_rate)
 
-try:
-    # Convert historical data from text input to list of floats
-    historical_subs = list(map(int, historical_subs_input.split(',')))
-    historical_hours = list(map(float, historical_hours_input.split(',')))
-    
-    # Validate the length of historical data to prevent excessive resource usage
-    if len(historical_subs) > 100 or len(historical_hours) > 100:
-        raise ValueError("Historical data length should not exceed 100 entries.")
-    
-    # Calculate growth rates based on historical data
-    sub_growth_rate = calculate_growth_rate(historical_subs)
-    hour_growth_rate = calculate_growth_rate(historical_hours)
+# Display results
+st.header("Results")
+st.write(f"It will take approximately {days} days to reach 1000 subscribers and 4000 watch hours.")
+st.write(f"Estimated Breakeven Date: {breakeven_date.strftime('%Y-%m-%d')}")
 
-    # Calculate breakeven point
-    days, breakeven_date, subs_list, hours_list = calculate_breakeven(current_subs, daily_subs, sub_growth_rate, current_hours, daily_hours, hour_growth_rate)
+# Plot the forecast
+fig, ax = plt.subplots(2, 1, figsize=(10, 8))
 
-    # Display results
-    st.header("Results")
-    st.write(f"It will take approximately {days} days to reach 1000 subscribers and 4000 watch hours.")
-    st.write(f"Estimated Breakeven Date: {breakeven_date.strftime('%Y-%m-%d')}")
+# Plot subscribers forecast
+ax[0].plot(subs_list, label="Subscribers")
+ax[0].axhline(1000, color='r', linestyle='--', label="Target 1000 Subscribers")
+ax[0].set_title("Subscribers Growth Forecast")
+ax[0].set_xlabel("Days")
+ax[0].set_ylabel("Subscribers")
+ax[0].legend()
 
-    # Plot the forecast
-    fig, ax = plt.subplots(2, 1, figsize=(10, 8))
+# Plot watch hours forecast
+ax[1].plot(hours_list, label="Watch Hours")
+ax[1].axhline(4000, color='r', linestyle='--', label="Target 4000 Watch Hours")
+ax[1].set_title("Watch Hours Growth Forecast")
+ax[1].set_xlabel("Days")
+ax[1].set_ylabel("Watch Hours")
+ax[1].legend()
 
-    # Plot subscribers forecast
-    ax[0].plot(subs_list, label="Subscribers")
-    ax[0].axhline(1000, color='r', linestyle='--', label="Target 1000 Subscribers")
-    ax[0].set_title("Subscribers Growth Forecast")
-    ax[0].set_xlabel("Days")
-    ax[0].set_ylabel("Subscribers")
-    ax[0].legend()
-
-    # Plot watch hours forecast
-    ax[1].plot(hours_list, label="Watch Hours")
-    ax[1].axhline(4000, color='r', linestyle='--', label="Target 4000 Watch Hours")
-    ax[1].set_title("Watch Hours Growth Forecast")
-    ax[1].set_xlabel("Days")
-    ax[1].set_ylabel("Watch Hours")
-    ax[1].legend()
-
-    # Display the plot in Streamlit
-    st.pyplot(fig)
-
-except ValueError as e:
-    st.error(f"Error in processing historical data: {e}. Please ensure the data is correctly formatted and does not exceed 100 entries.")
-except Exception as e:
-    st.error(f"An unexpected error occurred: {e}.")
+# Display the plot in Streamlit
+st.pyplot(fig)
